@@ -29,7 +29,7 @@ class ChatBotTest(unittest.TestCase):
         )
 
     def test_battle(self):
-        s = "姫騎士 vs オーク"
+        s = "保育園お迎え前に飲むビール vs 倫理感"
         res = self.chatbot.action("", s)
         print(res)
 
