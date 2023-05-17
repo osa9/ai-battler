@@ -19,6 +19,7 @@ def get_notification(mastodon, notification_id):
     if "@" not in user_id:
         user_id = f'{user_id}@{urlparse(os.getenv("MASTODON_SERVER")).hostname}'
 
+    print(notification["status"]["content"])
     return {
         "user_id": user_id,
         "acct": notification["account"]["acct"],

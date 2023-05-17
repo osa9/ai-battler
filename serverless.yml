@@ -65,6 +65,7 @@ functions:
     image:
       name: latest
       command: ["lambda_handler.worker"]
+    timeout: 120
 
   test:
     image:
