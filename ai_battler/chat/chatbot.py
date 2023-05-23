@@ -1,12 +1,14 @@
 from typing import List
 
 from ..ai.arena import Arena
+from ..ai.haiku import Haiku
 import re
 
 
 class ChatBot:
-    def __init__(self, arena: Arena):
+    def __init__(self, arena: Arena, haiku: Haiku):
         self.arena = arena
+        self.haiku = haiku
 
     def _escape_player(self, player: str) -> str:
         return player.strip()
@@ -15,20 +17,25 @@ class ChatBot:
         return re.sub(r"@ai", "", text).strip()
 
     def _vs_players(self, text: str) -> List[str]:
-        match = re.match(r"(.*[^a-zA-Z0-9])vs([^a-zA-Z0-9].*)", text, re.IGNORECASE)
-        if match:
-            a = self._escape_player(match.group(1))
-            b = self._escape_player(match.group(2))
-            if len(a) > 0 and len(b) > 0:
-                return [a, b]
-        return None
+        players = re.split("(?<=[^a-zA-Z0-9])(?:vs|VS)(?=[^a-zA-Z0-9])", text)
+        valid_players = [
+            self._escape_player(player)
+            for player in players
+            if len(self._escape_player(player)) > 0
+        ]
+        if len(valid_players) > 1:
+            return valid_players
+        else:
+            return None
 
     def _parse_text(self, text: str):
         lines = text.split("\n")
         if len(lines) >= 2:
             print(lines[0])
             print(lines[1])
-            battle_type = lines[0]
+            battle_type = lines[0].strip()
+            if battle_type == "俳句" or battle_type.lower() == "haiku":
+                return {"operation": "haiku", "message": "\n".join(lines[1:])}
             players = self._vs_players(lines[1])
             if players:
                 return {"operation": "battle", "players": players, "type": battle_type}
@@ -46,9 +53,10 @@ class ChatBot:
 
         if ops["operation"] == "notion":
             return ops["message"]
-        if ops["operation"] == "battle":
+        elif ops["operation"] == "battle":
             result = self.arena.battle(ops["players"], ops["type"])
             return self.arena.build_result_message(result, ops["type"])
-        if ops["operation"] == "challenge":
-            # TODO: Implement
+        elif ops["operation"] == "haiku":
+            return self.haiku.run(ops["message"])
+        else:
             return None

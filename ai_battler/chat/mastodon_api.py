@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 from .chatbot import ChatBot
 from .utils import remove_html_tags
 from ..ai.arena import Arena
+from ..ai.haiku import Haiku
 from boto3 import client as boto3_client
 
 
@@ -57,7 +58,10 @@ def process_worker(notification_id):
         if visibility == "direct" and info["acct"] != "osa9":
             return
 
-        bot = ChatBot(Arena(api_key=os.getenv("OPENAI_API_KEY")))
+        bot = ChatBot(
+            arena=Arena(api_key=os.getenv("OPENAI_API_KEY")),
+            haiku=Haiku(api_key=os.getenv("OPENAI_API_KEY")),
+        )
         res = bot.action(info["user_id"], info["content"])
         if res is not None:
             mastodon.status_post(

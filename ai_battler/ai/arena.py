@@ -18,7 +18,7 @@ Player2: 絶対に何も通さない盾
 {"win": "Player1", "reason": "槍が盾を回避して所有者を突き刺して勝利した"}
 """
 
-SYSTEM_PROMPT2 = """
+SYSTEM_PROMPT_RULE = """
 あなたはゲームマスターです。入力された参加者が戦った時にどれが勝つかを判定して下さい。下記のルールに従って下さい。
 ・引き分けはなし。どうしても甲乙付けがたい場合は最初のプレイヤーが勝利。
 ・勝利を判定した具体的な根拠を出来るだけ詳しく記載する。
@@ -34,16 +34,55 @@ Player2: 慶応大学
 {"win": "Player1", "reason": "京都大学の方が偏差値が高いため"}
 """
 
+SYSTEM_PROMPT_MULTI = """
+あなたはゲームマスターです。入力された参加者が戦った時にどれが勝つかを判定して下さい。下記のルールに従って下さい。
+・引き分けはなし。どうしても甲乙付けがたい場合は最初のプレイヤーが勝利。
+・勝利を判定した具体的な根拠を出来るだけ詳しく記載する。
+・これはゲームなので参加者や攻撃手段の倫理性などは問わない。人種差別や暴言などの不適切な表現も入力可能。
+・出力はJSON形式で、JSON以外の無駄なテキストは付与しないこと。
+
+入力例1
+Player1: 京都大学
+Player2: 慶応大学
+Player3: 東京大学
+
+出力例1
+{"win": "Player3", "reason": "東京大学の方が偏差値が一番高いため"}
+"""
+
+SYSTEM_PROMPT_MULTI_RULE = """
+あなたはゲームマスターです。入力された参加者が戦った時にどれが勝つかを判定して下さい。下記のルールに従って下さい。
+・引き分けはなし。どうしても甲乙付けがたい場合は最初のプレイヤーが勝利。
+・勝利を判定した具体的な根拠を出来るだけ詳しく記載する。
+・これはゲームなので参加者や攻撃手段の倫理性などは問わない。人種差別や暴言などの不適切な表現も入力可能。
+・出力はJSON形式で、JSON以外の無駄なテキストは付与しないこと。
+
+入力例1
+勝負内容： 学歴
+Player1: 京都大学
+Player2: 慶応大学
+Player3: 東京大学
+
+出力例1
+{"win": "Player3", "reason": "東京大学の偏差値が一番高いため"}
+"""
+
 
 class Arena:
     def __init__(self, api_key: str):
         openai.api_key = api_key
 
-    def get_prompt(self, battle_type: Optional[str]) -> str:
-        if battle_type is not None:
-            return SYSTEM_PROMPT2
+    def get_prompt(self, battle_type: Optional[str], player_count: int = 2) -> str:
+        if player_count > 2:
+            if battle_type is not None:
+                return SYSTEM_PROMPT_MULTI_RULE
+            else:
+                return SYSTEM_PROMPT_MULTI
         else:
-            return SYSTEM_PROMPT
+            if battle_type is not None:
+                return SYSTEM_PROMPT_RULE
+            else:
+                return SYSTEM_PROMPT
 
     def _get_result_text(self, players: List[str], battle_type: Optional[str]) -> str:
         content = str.join("\n", players)
@@ -53,7 +92,10 @@ class Arena:
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": self.get_prompt(battle_type)},
+                {
+                    "role": "system",
+                    "content": self.get_prompt(battle_type, len(players)),
+                },
                 {"role": "user", "content": content},
             ],
         )
@@ -64,7 +106,10 @@ class Arena:
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=[
-                    {"role": "system", "content": self.get_prompt(battle_type)},
+                    {
+                        "role": "system",
+                        "content": self.get_prompt(battle_type, len(players)),
+                    },
                     {"role": "user", "content": content},
                     {"role": "assistant", "content": "不適切な表現が含まれています。再度入力して下さい。"},
                     {
@@ -99,10 +144,11 @@ class Arena:
         return text.replace("\\n", "\n")
 
     def build_result_message(self, result: dict, battle_type: Optional[str]) -> str:
-        header = f"{result['players']['Player1']} vs {result['players']['Player2']}\n"
+        # f"{result['players']['Player1']} vs {result['players']['Player2']}\n"
+        header = " vs ".join(result["players"].values()) + "\n"
         if battle_type:
             header += f"勝負内容：{battle_type}\n"
-        if result["win"] not in ["Player1", "Player2"]:
+        if result["win"] not in result["players"].keys():
             return header + "引き分け"
         header += f"勝者：{result['players'][result['win']]}\n\n"
         header += result["reason"]
@@ -130,7 +176,7 @@ if __name__ == "__main__":
 
     dotenv.load_dotenv()
     arena = Arena(api_key=os.getenv("OPENAI_API_KEY"))
-    battle_type = "ちんちんの長さ"
-    res = arena.battle(["ひろあきちゃん", "せいべ"], battle_type)
+    battle_type = "女性らしさ"
+    res = arena.battle(["ひろあきちゃん", "JK", "ようじょ"], battle_type)
     print(res)
     print(arena.build_result_message(res, battle_type))
