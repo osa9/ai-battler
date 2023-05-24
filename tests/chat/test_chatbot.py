@@ -20,6 +20,7 @@ class ChatBotTest(unittest.TestCase):
     def test_haiku(self):
         s = "俳句\nせんべいHDはインフレ率以上の給料アップしてるからな"
         res = self.chatbot.action("", s)
+        print(res)
         self.assertEqual("詠んでみました。", res.split("\n")[0].strip())
 
     def test_multiplayer(self):
