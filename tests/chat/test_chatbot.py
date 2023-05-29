@@ -2,6 +2,7 @@ import unittest
 from ai_battler.chat.chatbot import ChatBot
 from ai_battler.ai.arena import Arena
 from ai_battler.ai.haiku import Haiku
+from ai_battler.ai.summary import WebSummary
 
 import dotenv
 import os
@@ -15,6 +16,7 @@ class ChatBotTest(unittest.TestCase):
         cls.chatbot = ChatBot(
             arena=Arena(api_key=os.getenv("OPENAI_API_KEY")),
             haiku=Haiku(api_key=os.getenv("OPENAI_API_KEY")),
+            summary=WebSummary(api_key=os.getenv("OPENAI_API_KEY")),
         )
 
     def test_haiku(self):
@@ -56,6 +58,11 @@ class ChatBotTest(unittest.TestCase):
             res,
             {"operation": "battle", "players": ["回避特化ゴリラ", "絶対に何をも貫く槍"], "type": None},
         )
+
+    def test_summary(self):
+        s = "要約\nhttps://www.youtube.com/watch?v=43YF4jBL0rE&ab_channel=%E3%81%B6%E3%81%84%E3%81%AE%E5%88%87%E3%82%8A%E6%8A%9C%E3%81%8D%E7%8C%AB"
+        res = self.chatbot.action("", s)
+        print(res)
 
 
 if __name__ == "__main__":

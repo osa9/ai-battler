@@ -11,6 +11,7 @@ from .chatbot import ChatBot
 from .utils import remove_html_tags
 from ..ai.arena import Arena
 from ..ai.haiku import Haiku
+from ..ai.summary import WebSummary
 from boto3 import client as boto3_client
 
 
@@ -61,6 +62,7 @@ def process_worker(notification_id):
         bot = ChatBot(
             arena=Arena(api_key=os.getenv("OPENAI_API_KEY")),
             haiku=Haiku(api_key=os.getenv("OPENAI_API_KEY")),
+            summary=WebSummary(api_key=os.getenv("OPENAI_API_KEY")),
         )
         res = bot.action(info["user_id"], info["content"])
         if res is not None:

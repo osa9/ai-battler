@@ -2,13 +2,15 @@ from typing import List
 
 from ..ai.arena import Arena
 from ..ai.haiku import Haiku
+from ..ai.summary import WebSummary
 import re
 
 
 class ChatBot:
-    def __init__(self, arena: Arena, haiku: Haiku):
+    def __init__(self, arena: Arena, haiku: Haiku, summary: WebSummary):
         self.arena = arena
         self.haiku = haiku
+        self.summary = summary
 
     def _escape_player(self, player: str) -> str:
         return player.strip()
@@ -36,6 +38,8 @@ class ChatBot:
             battle_type = lines[0].strip()
             if battle_type == "俳句" or battle_type.lower() == "haiku":
                 return {"operation": "haiku", "message": "\n".join(lines[1:])}
+            if battle_type == "要約" or battle_type == "まとめて":
+                return {"operation": "summary", "url": lines[1]}
             players = self._vs_players(lines[1])
             if players:
                 return {"operation": "battle", "players": players, "type": battle_type}
@@ -56,6 +60,8 @@ class ChatBot:
         elif ops["operation"] == "battle":
             result = self.arena.battle(ops["players"], ops["type"])
             return self.arena.build_result_message(result, ops["type"])
+        elif ops["operation"] == "summary":
+            return self.summary.run(ops["url"])
         elif ops["operation"] == "haiku":
             return self.haiku.run(ops["message"])
         else:
